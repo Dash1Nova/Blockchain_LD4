@@ -31,8 +31,6 @@ Procese dalyvauja trys šalys (demonstruojamos skirtingomis Ethereum paskyromis)
 
 ## Pagrindinis scenarijus
 
-Polisas sistemoje gali pereiti per 6 būsenas: `Created` (Sukurta), `Active` (Aktyvi), `ClaimSubmitted` (Pateikta pretenzija), `PaidOut` (Išmokėta), `Rejected` (Atmesta), `Cancelled` (Atšaukta).
-
 1. Draudikas sukuria draudimo polisą, nustato įmokos dydį ir įneša išmokos rezervą į sutartį.
 2. Klientas nusiperka polisą ir sumoka draudimo įmoką į sutartį.
 3. Įvykus avarijai, klientas užregistruoja pretenziją ir nurodo žalos sumą.
@@ -75,6 +73,9 @@ Polisas sistemoje gali pereiti per 6 būsenas: `Created` (Sukurta), `Active` (Ak
 
 ## Mano modelio skirtumas nuo bazinio scenarijaus:
 
-Mano modelis nėra tęsinys/patobulinimas užduoties apraše pateikto modelio, bet noriu pagrįsti, kodėl mano modelis yra solidus, o ne tiesiog pasirinktas savarankiškai kitoks nei pasiūlytas.
+Mano modelis nėra tęsinys/patobulinimas užduoties apraše pateikto modelio, bet noriu pagrįsti, kodėl mano modelis yra solidus, nes jis keičia lėšų saugojimo, būsenų ir sprendimų priėmimo logiką šiais sprendimais:
 
-1. h
+1. **Dvipusis lėšų užšaldymas (_Two-sided Escrow_):** Baziniame modelyje pinigus į sutartį įneša tik viena šalis (pirkėjas). Šiame modelyje sutartis vienu metu valdo ir apskaito **dviejų skirtingų šalių lėšas** – draudiko iš anksto užšaldytą didelį išmokos rezervą (`maxCoverage`) ir kliento sumokėtą draudimo įmoką (`premium`).
+2. **Kintama žalos suma ir lėšų padalinimas vienoje transakcijoje:** Baziniame modelyje išmokama visa iš anksto fiksuota prekės kaina. Draudimo modelyje klientas nurodo faktinę remonto sumą (`claimAmount`), o ekspertui patvirtinus, sutartis atlieka **dvigubą išmokėjimą**: dalį rezervo perveda klientui žalai padengti, o nepanaudotą rezervo likutį kartu su įmoka apskaičiuoja ir grąžina draudikui.
+3. **Dvi skirtingos atšaukimo eigos su procentine bauda:** Vietoj paprasto 100 % pinigų grąžinimo, įgyvendintos dvi nutraukimo šakos: draudikas gali atšaukti dar nenupirktą polisą susigrąžindamas 100 % rezervo, o klientas gali nutraukti jau aktyvų polisą tik su **80/20 taisykle** (atgauna 80 % įmokos, o 20 % lieka draudikui kaip administracinis mokestis).
+4. **Kelių polisų registras:** Vietoj vienos prekės ir vieno užsakymo, sutartyje suprojektuotas neriboto skaičiaus draudimo polisų valdymas pagal unikalų poliso identifikatorių (`mapping(uint256 => Policy)`).
