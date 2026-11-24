@@ -51,7 +51,7 @@ Procese dalyvauja trys šalys (demonstruojamos skirtingomis Ethereum paskyromis)
 
 ## Dalyvių sąveika pateikiama sekų diagrama
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+<img width="1114" height="812" alt="sequence_diagram_blockchain" src="https://github.com/user-attachments/assets/1b41326d-5da3-459b-9e1a-f6068a3db4da" />
 
 **Trumpas diagramos veiksmų paaiškinimas:**
 
