@@ -74,4 +74,59 @@ contract CarInsurance {
     function getPolicy(uint256 policyId) external view policyExists(policyId) returns (Policy memory) {
         return policies[policyId];
     }
+
+    function buyPolicy(uint256 policyId) external payable policyExists(policyId) {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.client, "Only client");
+        require(p.state == State.Created, "Wrong state");
+        require(msg.value == p.premium, "Wrong premium amount");
+
+        p.state = State.Active;
+        emit PolicyBought(policyId);
+    }
+
+    function submitClaim(uint256 policyId, uint256 claimAmount, string calldata reason)
+        external policyExists(policyId)
+    {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.client, "Only client");
+        require(p.state == State.Active, "Wrong state");
+        require(claimAmount > 0 && claimAmount <= p.maxCoverage, "Invalid claim amount");
+        require(bytes(reason).length > 0, "Reason is empty");
+
+        p.claimAmount = claimAmount;
+        p.reason = reason;
+        p.state = State.ClaimSubmitted;
+        emit ClaimSubmitted(policyId, claimAmount, reason);
+    }
+
+    function approveClaim(uint256 policyId) external policyExists(policyId) {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.assessor, "Only assessor");
+        require(p.state == State.ClaimSubmitted, "Wrong state");
+
+        uint256 insurerPayment = p.maxCoverage - p.claimAmount + p.premium;
+        p.state = State.PaidOut;
+
+        sendEth(p.client, p.claimAmount);
+        sendEth(p.insurer, insurerPayment);
+        emit ClaimApproved(policyId, p.claimAmount, insurerPayment);
+    }
+
+    function rejectClaim(uint256 policyId) external policyExists(policyId) {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.assessor, "Only assessor");
+        require(p.state == State.ClaimSubmitted, "Wrong state");
+
+        uint256 insurerPayment = p.maxCoverage + p.premium;
+        p.state = State.Rejected;
+        sendEth(p.insurer, insurerPayment);
+        emit ClaimRejected(policyId, insurerPayment);
+    }
+
+    function sendEth(address receiver, uint256 amount) private {
+        if (amount == 0) return;
+        (bool sent, ) = payable(receiver).call{value: amount}("");
+        require(sent, "ETH transfer failed");
+    }
 }
