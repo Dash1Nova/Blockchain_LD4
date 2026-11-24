@@ -51,6 +51,8 @@ Procese dalyvauja trys šalys (demonstruojamos skirtingomis Ethereum paskyromis)
 
 ## Dalyvių sąveika pateikiama sekų diagrama
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 **Trumpas diagramos veiksmų paaiškinimas:**
 
 - **1 veiksmas (`createPolicy`):** Draudikas sukuria polisą ir į sutartį perveda maksimalios išmokos rezervą.
@@ -69,7 +71,7 @@ Procese dalyvauja trys šalys (demonstruojamos skirtingomis Ethereum paskyromis)
 - **Prielaidos ir apribojimai:**
   - Išmanioji sutartis pati negali patikrinti, ar tikrai įvyko avarija ir kokia yra reali remonto kaina, todėl remiasi prielaida, kad žalų ekspertas yra sąžiningas.
   - Visi blokų grandinėje įrašyti duomenys (adresai, sumos, įvykio aprašymas) yra viešai matomi, todėl jautrūs asmens duomenys ar avarijos nuotraukos turėtų būti saugomi už grandinės ribų.
-  - ///////////////////////////////////////////////////////////////////////////////////////Jei klientas nenusiperka sukurto poliso, draudikas gali atgauti lėšas per `cancelByInsurer`. Tačiau jei klientas pateikė pretenziją, o ekspertas delsia priimti sprendimą, šioje versijoje lėšos lieka užšaldytos sutartyje iki sprendimo priėmimo (ateityje tai būtų galima spręsti įvedant laiko terminus per `block.timestamp`).
+  - Jei klientas nenusiperka sukurto poliso, draudikas gali atgauti lėšas per `cancelByInsurer`. Tačiau jei klientas pateikė pretenziją, o ekspertas delsia priimti sprendimą, šioje versijoje lėšos lieka užšaldytos sutartyje iki sprendimo priėmimo (ateityje tai būtų galima spręsti įvedant laiko terminus per `block.timestamp`).
 
 ## Mano modelio skirtumas nuo bazinio scenarijaus:
 
@@ -79,3 +81,48 @@ Mano modelis nėra tęsinys/patobulinimas užduoties apraše pateikto modelio, b
 2. **Kintama žalos suma ir lėšų padalinimas vienoje transakcijoje:** Baziniame modelyje išmokama visa iš anksto fiksuota prekės kaina. Draudimo modelyje klientas nurodo faktinę remonto sumą (`claimAmount`), o ekspertui patvirtinus, sutartis atlieka **dvigubą išmokėjimą**: dalį rezervo perveda klientui žalai padengti, o nepanaudotą rezervo likutį kartu su įmoka apskaičiuoja ir grąžina draudikui.
 3. **Dvi skirtingos atšaukimo eigos su procentine bauda:** Vietoj paprasto 100 % pinigų grąžinimo, įgyvendintos dvi nutraukimo šakos: draudikas gali atšaukti dar nenupirktą polisą susigrąžindamas 100 % rezervo, o klientas gali nutraukti jau aktyvų polisą tik su **80/20 taisykle** (atgauna 80 % įmokos, o 20 % lieka draudikui kaip administracinis mokestis).
 4. **Kelių polisų registras:** Vietoj vienos prekės ir vieno užsakymo, sutartyje suprojektuotas neriboto skaičiaus draudimo polisų valdymas pagal unikalų poliso identifikatorių (`mapping(uint256 => Policy)`).
+
+## Diegimas, pradiniai duomenys ir testavimas (v0.1)
+
+### Projekto paruošimas ir testavimas
+
+Norint įdiegti priklausomybes ir paleisti automatinius testus, terminale įvesti komandą:
+
+```bash
+npm install
+npm test
+```
+
+### Diegimo scenarijus ir komandos
+
+Sutarties diegimas atliekamas per scenarijų `scripts/deploy.js`. Tam reikalingi du terminalai:
+
+- **1 terminalas** (paleidžia vietinį Hardhat Ethereum tinklą adresu `http://127.0.0.1:8545`, Chain ID `31337`):
+  ```bash
+  npm run node
+  ```
+- **2 terminalas** (įdiegia sutartį į vietinį tinklą ir sukuria pradinį polisą):
+  ```bash
+  npm run deploy
+  ```
+- **Pilnos sėkmingos eigos simuliacija vietiniame tinkle**:
+  ```bash
+  npm run demo
+  ```
+
+### Pradinės dalyvių paskyros (Hardhat lokalus tinklas)
+
+Diegimo scenarijus (`scripts/deploy.js`) automatiškai priskiria pirmąsias tris vietinio Hardhat tinklo testines paskyras:
+
+- **Draudikas (`Insurer`):** Hardhat paskyra `#0` (`0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`)
+- **Klientas (`Client`):** Hardhat paskyra `#1` (`0x70997970C51812dc3A010C7d01b50e0d17dc79C8`)
+- **Žalų ekspertas (`Assessor`):** Hardhat paskyra `#2` (`0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`)
+
+### Pradiniai duomenys
+
+Diegimo metu sutartyje automatiškai sukuriamas pirmasis demonstracinis polisas (`policyId = 1`) su šiais duomenimis:
+
+- **Automobilis (`carInfo`):** `Toyota Corolla, 2020, DEMO-001`
+- **Draudimo įmoka (`premium`):** `0.1 ETH` (`100000000000000000 wei`)
+- **Išmokos rezervas (`maxCoverage`):** `1.0 ETH` (`1000000000000000000 wei`)
+- **Pradinė būsena:** `Created`
