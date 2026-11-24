@@ -75,7 +75,7 @@ contract CarInsurance {
         return policies[policyId];
     }
 
-    function buyPolicy(uint256 policyId) external payable policyExists(policyId) {
+    function buyPolicy(uint256 policyId) external payable nonReentrant policyExists(policyId) {
         Policy storage p = policies[policyId];
         require(msg.sender == p.client, "Only client");
         require(p.state == State.Created, "Wrong state");
@@ -86,7 +86,7 @@ contract CarInsurance {
     }
 
     function submitClaim(uint256 policyId, uint256 claimAmount, string calldata reason)
-        external policyExists(policyId)
+        external nonReentrant policyExists(policyId)
     {
         Policy storage p = policies[policyId];
         require(msg.sender == p.client, "Only client");
@@ -100,7 +100,7 @@ contract CarInsurance {
         emit ClaimSubmitted(policyId, claimAmount, reason);
     }
 
-    function approveClaim(uint256 policyId) external policyExists(policyId) {
+    function approveClaim(uint256 policyId) external nonReentrant policyExists(policyId) {
         Policy storage p = policies[policyId];
         require(msg.sender == p.assessor, "Only assessor");
         require(p.state == State.ClaimSubmitted, "Wrong state");
@@ -113,7 +113,7 @@ contract CarInsurance {
         emit ClaimApproved(policyId, p.claimAmount, insurerPayment);
     }
 
-    function rejectClaim(uint256 policyId) external policyExists(policyId) {
+    function rejectClaim(uint256 policyId) external nonReentrant policyExists(policyId) {
         Policy storage p = policies[policyId];
         require(msg.sender == p.assessor, "Only assessor");
         require(p.state == State.ClaimSubmitted, "Wrong state");
@@ -122,6 +122,30 @@ contract CarInsurance {
         p.state = State.Rejected;
         sendEth(p.insurer, insurerPayment);
         emit ClaimRejected(policyId, insurerPayment);
+    }
+
+    function cancelByInsurer(uint256 policyId) external nonReentrant policyExists(policyId) {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.insurer, "Only insurer");
+        require(p.state == State.Created, "Wrong state");
+
+        p.state = State.Cancelled;
+        sendEth(p.insurer, p.maxCoverage);
+        emit PolicyCancelledByInsurer(policyId, p.maxCoverage);
+    }
+
+    function cancelByClient(uint256 policyId) external nonReentrant policyExists(policyId) {
+        Policy storage p = policies[policyId];
+        require(msg.sender == p.client, "Only client");
+        require(p.state == State.Active, "Wrong state");
+
+        uint256 clientRefund = (p.premium / 100) * 80 + ((p.premium % 100) * 80) / 100;
+        uint256 insurerPayment = p.maxCoverage + p.premium - clientRefund;
+        p.state = State.Cancelled;
+
+        sendEth(p.client, clientRefund);
+        sendEth(p.insurer, insurerPayment);
+        emit PolicyCancelledByClient(policyId, clientRefund, insurerPayment);
     }
 
     function sendEth(address receiver, uint256 amount) private {
