@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="lt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CarInsurance · Draudimo DApp</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="wallet-area">
+        <div id="networkBadge" class="badge warning">Tinklas nepatikrintas</div>
+        <button id="connectBtn" class="button primary">
+          Prisijungti prie MetaMask
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div>
+          <h1>DRAUDIMO POLISŲ VALDYMAS</h1>
+          <p>Automobilių draudimo sutarčių valdymo sistema</p>
+        </div>
+      </section>
+
+      <section class="connection card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">PINIGINĖ</p>
+            <h2>Prisijungimo būsena</h2>
+          </div>
+
+          <span id="connectionStatus" class="status-pill danger"
+            >Neprisijungta</span
+          >
+        </div>
+
+        <div class="connection-grid">
+          <div class="info-box">
+            <span>Aktyvi paskyra:</span>
+            <strong id="accountValue">Neprijungta</strong>
+          </div>
+
+          <div class="info-box">
+            <span>Vaidmuo pasirinktame polise:</span>
+            <strong id="roleValue">Nenustatytas</strong>
+          </div>
+
+          <div class="info-box">
+            <span>Aktyvus tinklas:</span>
+            <strong id="networkValue">Neprijungta</strong>
+          </div>
+
+          <div class="info-box">
+            <span>Išmaniosios sutarties adresas:</span>
+            <strong id="contractValue">Nesukonfigūruota</strong>
+          </div>
+        </div>
+
+        <p id="globalMessage" class="message" role="status">
+          Prisijunkite prie MetaMask, kad galėtumėte naudotis sistema.
+        </p>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar card">
+          <p class="eyebrow">SUTARTIES DUOMENYS</p>
+          <label for="policyId">Poliso ID</label>
+
+          <div class="inline-control">
+            <input
+              id="policyId"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Pvz., 1"
+            />
+
+            <button id="loadPolicyBtn" class="button secondary" type="button">
+              Peržiūrėti polisą
+            </button>
+          </div>
+
+          <button id="latestBtn" class="button ghost full" type="button">
+            Peržiūrėti naujausią polisą
+          </button>
+
+          <div class="divider"></div>
+
+          <div class="stat">
+            <span>Sukurta polisų:</span>
+            <strong id="policyCount">—</strong>
+          </div>
+        </aside>
+
+        <section class="main-column">
+          <section class="card policy-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">POLISO INFORMACIJA</p>
+                <h2 id="policyTitle">Pasirinkite polisą</h2>
+              </div>
+
+              <span id="stateBadge" class="badge neutral">—</span>
+            </div>
+
+            <div id="policyEmpty" class="empty-state">
+              <strong>Polisas dar neįkeltas</strong>
+              <p>Įveskite poliso ID arba pasirinkite naujausią polisą.</p>
+            </div>
+
+            <div id="policyDetails" class="details-grid hidden">
+              <div class="detail">
+                <span>Automobilis:</span>
+                <strong id="carInfo">—</strong>
+              </div>
+
+              <div class="detail">
+                <span>Draudimo įmoka:</span>
+                <strong id="premium">—</strong>
+              </div>
+
+              <div class="detail">
+                <span>Maksimali apsauga:</span>
+                <strong id="coverage">—</strong>
+              </div>
+
+              <div class="detail">
+                <span>Žalos suma:</span>
+                <strong id="claimAmount">—</strong>
+              </div>
+
+              <div class="detail wide">
+                <span>Žalos priežastis:</span>
+                <strong id="claimReason">—</strong>
+              </div>
+
+              <div class="detail">
+                <span>Draudikas:</span>
+                <strong id="insurer">—</strong>
+              </div>
+
+              <div class="detail">
+                <span>Klientas:</span>
+                <strong id="client">—</strong>
+              </div>
+
+              <div class="detail wide">
+                <span>Žalų vertintojas:</span>
+                <strong id="assessor">—</strong>
+              </div>
+            </div>
+
+            <button id="refreshBtn" class="button ghost hidden" type="button">
+              Atnaujinti duomenis
+            </button>
+          </section>
+
+          <section class="card create-card" id="createSection">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">DRAUDIKUI</p>
+                <h2>Sukurti draudimo polisą</h2>
+              </div>
+
+              <span class="role-icon">＋</span>
+            </div>
+
+            <p class="muted">
+              Priminimas: Rezervas turi būti didesnis už draudimo įmoką.
+            </p>
+
+            <form id="createForm" class="form-grid">
+              <label>
+                Kliento adresas
+                <input
+                  id="newClient"
+                  required
+                  placeholder="0x..."
+                  autocomplete="off"
+                />
+              </label>
+
+              <label>
+                Vertintojo adresas
+                <input
+                  id="newAssessor"
+                  required
+                  placeholder="0x..."
+                  autocomplete="off"
+                />
+              </label>
+
+              <label class="wide">
+                Automobilio informacija
+                <input
+                  id="newCar"
+                  required
+                  maxlength="240"
+                  placeholder="Markė, modelis, registracijos nr."
+                />
+              </label>
+
+              <label>
+                Įmoka (ETH)
+                <input
+                  id="newPremium"
+                  required
+                  type="number"
+                  min="0.000000000000000001"
+                  step="any"
+                  placeholder="0.01"
+                />
+              </label>
+
+              <label>
+                Rezervas (ETH)
+                <input
+                  id="newReserve"
+                  required
+                  type="number"
+                  min="0.000000000000000001"
+                  step="any"
+                  placeholder="0.10"
+                />
+              </label>
+
+              <div class="wide form-footer">
+                <button class="button primary" type="submit" id="createBtn">
+                  Sukurti polisą
+                </button>
+
+                <span class="muted tiny">
+                  Transakciją reikia patvirtinti MetaMask piniginėje.
+                </span>
+              </div>
+            </form>
+          </section>
+
+          <section class="card actions-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">PROCESO VEIKSMAI</p>
+                <h2>Valdyti pasirinktą polisą</h2>
+              </div>
+            </div>
+
+            <p class="muted">
+              Veiksmai rodomi pagal prijungtą MetaMask paskyrą, jos vaidmenį ir
+              poliso būseną.
+            </p>
+
+            <div id="noActionsMessage" class="empty-state">
+              <strong>Šiuo metu jokie veiksmai neprieinami</strong>
+              <p>Prisijunkite prie MetaMask ir pasirinkite polisą.</p>
+            </div>
+
+            <div class="actions-grid">
+              <article class="action hidden" id="buyAction">
+                <h3>Klientas · Įsigyti</h3>
+                <p>Sumokėkite sutartyje nurodytą įmoką.</p>
+
+                <button
+                  id="buyBtn"
+                  class="button secondary action-button"
+                  type="button"
+                  disabled
+                >
+                  Įsigyti polisą
+                </button>
+              </article>
+
+              <article class="action hidden" id="claimAction">
+                <h3>Klientas · Žalos prašymas</h3>
+
+                <form id="claimForm" class="mini-form">
+                  <label>
+                    Suma (ETH)
+                    <input
+                      id="claimValue"
+                      type="number"
+                      min="0.000000000000000001"
+                      step="any"
+                      required
+                      placeholder="0.02"
+                    />
+                  </label>
+
+                  <label>
+                    Priežastis
+                    <input
+                      id="claimReasonInput"
+                      maxlength="240"
+                      required
+                      placeholder="Trumpai aprašykite žalą"
+                    />
+                  </label>
+
+                  <button
+                    class="button secondary action-button"
+                    type="submit"
+                    disabled
+                    id="claimBtn"
+                  >
+                    Pateikti prašymą
+                  </button>
+                </form>
+              </article>
+
+              <article class="action hidden" id="approveAction">
+                <h3>Vertintojas · Patvirtinti</h3>
+                <p>Patvirtinkite prašymą ir atlikite išmoką.</p>
+
+                <button
+                  id="approveBtn"
+                  class="button success action-button"
+                  type="button"
+                  disabled
+                >
+                  Patvirtinti žalą
+                </button>
+              </article>
+
+              <article class="action hidden" id="rejectAction">
+                <h3>Vertintojas · Atmesti</h3>
+                <p>Atmeskite prašymą ir grąžinkite lėšas draudikui.</p>
+
+                <button
+                  id="rejectBtn"
+                  class="button danger action-button"
+                  type="button"
+                  disabled
+                >
+                  Atmesti žalą
+                </button>
+              </article>
+
+              <article class="action hidden" id="cancelInsurerAction">
+                <h3>Draudikas · Atšaukti</h3>
+                <p>Atšaukite dar kliento neįsigytą polisą.</p>
+
+                <button
+                  id="cancelInsurerBtn"
+                  class="button danger action-button"
+                  type="button"
+                  disabled
+                >
+                  Atšaukti kaip draudikui
+                </button>
+              </article>
+
+              <article class="action hidden" id="cancelClientAction">
+                <h3>Klientas · Atšaukti</h3>
+                <p>Atšaukite aktyvų polisą. Grąžinama 80 % įmokos.</p>
+
+                <button
+                  id="cancelClientBtn"
+                  class="button danger action-button"
+                  type="button"
+                  disabled
+                >
+                  Atšaukti kaip klientui
+                </button>
+              </article>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <div
+      id="txOverlay"
+      class="tx-overlay hidden"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="tx-modal">
+        <div class="spinner"></div>
+
+        <h3 id="txTitle">Laukiama transakcijos</h3>
+
+        <p id="txText">Patvirtinkite veiksmą MetaMask piniginėje.</p>
+      </div>
+    </div>
+  </body>
+</html>
