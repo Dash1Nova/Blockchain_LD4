@@ -10,6 +10,24 @@
   </head>
 
   <body>
+    <div
+      id="globalMessage"
+      class="global-message hidden"
+      role="alert"
+      aria-live="assertive"
+    >
+      <span id="globalMessageText"></span>
+
+      <button
+        type="button"
+        id="closeMessageBtn"
+        class="close-message"
+        aria-label="Uždaryti pranešimą"
+      >
+        ×
+      </button>
+    </div>
+
     <header class="topbar">
       <div class="wallet-area">
         <div id="networkBadge" class="badge warning">Tinklas nepatikrintas</div>
@@ -65,10 +83,6 @@
             <strong id="contractValue">Nesukonfigūruota</strong>
           </div>
         </div>
-
-        <p id="globalMessage" class="message" role="status">
-          Prisijunkite prie MetaMask, kad galėtumėte naudotis sistema.
-        </p>
       </section>
 
       <section class="workspace">

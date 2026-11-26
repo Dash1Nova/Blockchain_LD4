@@ -437,3 +437,35 @@ button:disabled:hover {
   margin-top: 4px;
   color: #888;
 }
+
+.global-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: min(90%, 650px);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: white;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+}
+
+.global-message.hidden {
+  display: none;
+}
+
+.close-message {
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 25px;
+  font-weight: bold;
+  cursor: pointer;
+}

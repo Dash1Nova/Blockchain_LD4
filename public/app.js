@@ -1,5 +1,6 @@
-const contractAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+const contractAddress = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0";
 const expectedChainId = "31337";
+let authorizedInsurer = null;
 
 const contractABI = [
   "function policyCount() view returns (uint256)",
@@ -18,6 +19,7 @@ const contractABI = [
   "event ClaimRejected(uint256 indexed policyId, uint256 insurerPayment)",
   "event PolicyCancelledByInsurer(uint256 indexed policyId, uint256 insurerPayment)",
   "event PolicyCancelledByClient(uint256 indexed policyId, uint256 clientRefund, uint256 insurerPayment)",
+  "function authorizedInsurer() view returns (address)",
 ];
 
 let provider = null;
@@ -30,6 +32,8 @@ let currentPolicy = null;
 
 let correctNetwork = false;
 let transactionPending = false;
+
+let currentAccountRoles = [];
 
 const policyStates = [
   "Sukurtas",
@@ -134,18 +138,42 @@ async function updateWalletBalance() {
   }
 }
 
-function showMessage(message, type = "info") {
-  elements.globalMessage.textContent = message;
-  elements.globalMessage.className = "message";
+function showMessage(message, type = "error") {
+  const messageElement = elements.globalMessage;
+  const textElement = document.getElementById("globalMessageText");
 
-  if (type === "success") {
-    elements.globalMessage.classList.add("success");
-  } else if (type === "error") {
-    elements.globalMessage.classList.add("error");
+  if (!messageElement || !textElement) return;
+
+  textElement.textContent = message;
+
+  messageElement.className = "global-message";
+
+  if (type === "error") {
+    messageElement.style.background = "#c62828";
+  } else if (type === "success") {
+    messageElement.style.background = "#2e7d32";
   } else if (type === "warning") {
-    elements.globalMessage.classList.add("warning");
+    messageElement.style.background = "#ef6c00";
+  } else {
+    messageElement.style.background = "#1565c0";
+  }
+
+  messageElement.classList.remove("hidden");
+}
+
+function hideMessage() {
+  if (elements.globalMessage) {
+    elements.globalMessage.classList.add("hidden");
   }
 }
+
+document
+  .getElementById("closeMessageBtn")
+  .addEventListener("click", hideMessage);
+
+document
+  .getElementById("closeMessageBtn")
+  .addEventListener("click", hideMessage);
 
 function shortenAddress(address) {
   if (!address) return "—";
@@ -183,7 +211,11 @@ function clearPolicy() {
   currentPolicy = null;
   currentPolicyId = null;
 
-  elements.roleValue.textContent = "Nenustatytas";
+  elements.roleValue.textContent = !currentAccount
+    ? "Neprijungta"
+    : currentAccountRoles.length > 0
+    ? currentAccountRoles.join(", ")
+    : "Dar nedalyvauja jokiuose polisuose";
   elements.policyTitle.textContent = "Pasirinkite polisą";
   elements.stateBadge.textContent = "—";
   elements.stateBadge.className = "badge neutral";
@@ -211,11 +243,6 @@ async function connectWallet() {
     }
 
     await initializeConnection(accounts[0]);
-
-    showMessage(
-      "Prisijungta prie paskyros: " + shortenAddress(accounts[0]),
-      "success",
-    );
   } catch (error) {
     handleError(error);
   }
@@ -224,8 +251,12 @@ async function connectWallet() {
 async function initializeConnection(account) {
   const previousPolicyId = currentPolicyId;
 
-  provider = new ethers.BrowserProvider(window.ethereum);
   currentAccount = account;
+  currentAccountRoles = [];
+
+  elements.roleValue.textContent = "Nustatomi vaidmenys...";
+
+  provider = new ethers.BrowserProvider(window.ethereum);
   signer = await provider.getSigner(account);
 
   const network = await provider.getNetwork();
@@ -243,16 +274,11 @@ async function initializeConnection(account) {
   elements.connectionStatus.textContent = "Prijungta";
   elements.connectionStatus.className = "status-pill success";
   elements.connectBtn.textContent = "Piniginė prijungta";
+
   updateNetworkBadge(chainId);
 
   if (!isContractAddressConfigured()) {
     contract = null;
-
-    showMessage(
-      "Įrašykite savo išmaniosios sutarties adresą app.js faile.",
-      "warning",
-    );
-
     clearPolicy();
     return;
   }
@@ -270,9 +296,13 @@ async function initializeConnection(account) {
     return;
   }
 
+  authorizedInsurer = await contract.authorizedInsurer();
+
   await updatePolicyCount();
   await updateWalletBalance();
   await updateTransactionHistory();
+
+  await updateAccountRoles();
 
   if (previousPolicyId !== null) {
     await loadPolicy(previousPolicyId);
@@ -465,7 +495,6 @@ async function loadPolicy(id) {
     updateRoleUI(policy, currentAccount);
     setVisible(elements.policyEmpty, false);
     setVisible(elements.policyDetails, true);
-    showMessage("Poliso duomenys sėkmingai įkelti.", "success");
   } catch (error) {
     handleError(error);
   }
@@ -513,28 +542,6 @@ async function loadLatestPolicy() {
 }
 
 function updateRoleUI(policy, account) {
-  if (!policy || !account) {
-    elements.roleValue.textContent = "Nenustatytas";
-    updateActionVisibility();
-    return;
-  }
-
-  const address = account.toLowerCase();
-  const isInsurer = address === policy.insurer.toLowerCase();
-  const isClient = address === policy.client.toLowerCase();
-  const isAssessor = address === policy.assessor.toLowerCase();
-  let role = "Nėra šio poliso dalyvis";
-
-  if (isInsurer) {
-    role = "Draudikas";
-  } else if (isClient) {
-    role = "Klientas";
-  } else if (isAssessor) {
-    role = "Žalų vertintojas";
-  }
-
-  elements.roleValue.textContent = role;
-
   updateActionVisibility();
 }
 
@@ -561,7 +568,10 @@ function updateActionVisibility() {
     state = Number(policy.state);
   }
 
-  const canCreatePolicy = connected;
+  const canCreatePolicy =
+    connected &&
+    ethers.isAddress(authorizedInsurer) &&
+    currentAccount.toLowerCase() === authorizedInsurer.toLowerCase();
   const canCancelAsInsurer = connected && isInsurer && state === 0;
   const canBuy = connected && isClient && state === 0;
   const canClaim = connected && isClient && state === 1;
@@ -631,6 +641,8 @@ async function executeTransaction(title, action) {
     await updatePolicyCount();
     await updateWalletBalance();
     await updateTransactionHistory();
+
+    await updateAccountRoles();
 
     if (currentPolicyId !== null) {
       await loadPolicy(currentPolicyId);
@@ -707,6 +719,16 @@ async function createPolicy(event) {
     elements.createForm.reset();
 
     await loadLatestPolicy();
+
+    if (!contract || !signer || !correctNetwork || !authorizedInsurer) {
+      throw new Error("Pirmiausia prisijunkite prie tinkamo tinklo.");
+    }
+
+    const account = await signer.getAddress();
+
+    if (account.toLowerCase() !== authorizedInsurer.toLowerCase()) {
+      throw new Error("Polisą gali sukurti tik draudikas.");
+    }
   } catch (error) {
     handleError(error);
   }
@@ -822,7 +844,7 @@ function handleAccountsChanged(accounts) {
     elements.connectBtn.textContent = "Prisijungti prie MetaMask";
 
     document.getElementById("walletBalance").textContent = "— ETH";
-
+    currentAccountRoles = [];
     clearPolicy();
 
     showMessage("MetaMask paskyra atjungta. Prisijunkite iš naujo.", "warning");
@@ -840,22 +862,41 @@ function handleChainChanged() {
 }
 
 function handleError(error) {
-  console.error(error);
+  console.error("DApp klaida:", error);
 
-  let message = "Įvyko netikėta klaida.";
+  let message = "Įvyko netikėta klaida. Bandykite dar kartą.";
 
-  if (error.code === 4001) {
+  const errorCode = error?.code;
+  const errorText = (
+    error?.reason ||
+    error?.shortMessage ||
+    error?.message ||
+    ""
+  ).toLowerCase();
+
+  if (errorCode === 4001 || errorCode === "ACTION_REJECTED") {
     message = "Transakcija atšaukta MetaMask piniginėje.";
-  } else if (error.code === "ACTION_REJECTED") {
-    message = "Veiksmas atmestas MetaMask piniginėje.";
-  } else if (error.code === "INSUFFICIENT_FUNDS") {
-    message = "Nepakanka ETH lėšų transakcijai.";
-  } else if (error.reason) {
+  } else if (errorCode === "INSUFFICIENT_FUNDS") {
+    message = "Nepakanka ETH lėšų transakcijai ir tinklo mokesčiui.";
+  } else if (
+    errorText.includes("user rejected") ||
+    errorText.includes("rejected the request")
+  ) {
+    message = "Transakcija atmesta piniginėje.";
+  } else if (
+    errorText.includes("reserve") ||
+    errorText.includes("coverage must be greater")
+  ) {
+    message = "Draudimo rezervas turi būti didesnis už įmoką.";
+  } else if (
+    errorText.includes("insufficient") ||
+    errorText.includes("funds")
+  ) {
+    message = "Nepakanka ETH lėšų šiam veiksmui.";
+  } else if (error?.reason) {
     message = error.reason;
-  } else if (error.shortMessage) {
+  } else if (error?.shortMessage) {
     message = error.shortMessage;
-  } else if (error.message) {
-    message = error.message;
   }
 
   showMessage(message, "error");
@@ -894,3 +935,51 @@ clearPolicy();
 elements.contractValue.textContent = isContractAddressConfigured()
   ? shortenAddress(contractAddress)
   : "Nesukonfigūruota";
+
+async function updateAccountRoles() {
+  if (!contract || !correctNetwork || !currentAccount) {
+    currentAccountRoles = [];
+    elements.roleValue.textContent = "Neprijungta";
+    updateActionVisibility();
+    return;
+  }
+
+  try {
+    elements.roleValue.textContent = "Nustatomi vaidmenys...";
+
+    const address = currentAccount.toLowerCase();
+    const authorizedAddress = authorizedInsurer.toLowerCase();
+
+    const roles = new Set();
+
+    if (address === authorizedAddress) {
+      roles.add("Draudikas");
+    }
+
+    const count = await contract.policyCount();
+
+    for (let i = 1n; i <= count; i++) {
+      const policy = await contract.getPolicy(i);
+
+      if (policy.client.toLowerCase() === address) {
+        roles.add("Klientas");
+      }
+
+      if (policy.assessor.toLowerCase() === address) {
+        roles.add("Žalų vertintojas");
+      }
+    }
+
+    currentAccountRoles = [...roles];
+
+    elements.roleValue.textContent =
+      currentAccountRoles.length > 0
+        ? currentAccountRoles.join(", ")
+        : "Neturi priskirto vaidmens";
+
+    updateActionVisibility();
+  } catch (error) {
+    console.error("Nepavyko nustatyti paskyros vaidmenų:", error);
+    elements.roleValue.textContent = "Nepavyko nustatyti vaidmens";
+  }
+}
