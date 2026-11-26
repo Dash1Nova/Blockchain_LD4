@@ -1,35 +1,48 @@
-import { network } from "hardhat";
-import { mkdir, writeFile } from "node:fs/promises";
+const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
-const { ethers } = await network.connect();
-const [insurer, client, assessor] = await ethers.getSigners();
-const insurance = await ethers.deployContract("CarInsurance", [], insurer);
-await insurance.waitForDeployment();
+async function main() {
+  const [insurer, client, assessor] = await hre.ethers.getSigners();
 
-const premium = ethers.parseEther("0.1");
-const reserve = ethers.parseEther("1");
-await (
-  await insurance
-    .connect(insurer)
-    .createPolicy(
+  const insurance = await hre.ethers.deployContract("CarInsurance");
+  await insurance.waitForDeployment();
+  const contractAddress = await insurance.getAddress();
+  console.log("CarInsurance įdiegta:", contractAddress);
+
+  const premium = hre.ethers.parseEther("0.1");
+  const reserve = hre.ethers.parseEther("1");
+  await (
+    await insurance.createPolicy(
       client.address,
       assessor.address,
       "Toyota Corolla, 2020, DEMO-001",
       premium,
       { value: reserve },
     )
-).wait();
+  ).wait();
+  console.log("Sukurtas pradinis demo polisas");
 
-const info = {
-  contractAddress: await insurance.getAddress(),
-  chainId: (await ethers.provider.getNetwork()).chainId.toString(),
-  insurer: insurer.address,
-  client: client.address,
-  assessor: assessor.address,
-  policyId: 1,
-  premiumWei: premium.toString(),
-  maxCoverageWei: reserve.toString(),
-};
-await mkdir("deployments", { recursive: true });
-await writeFile("deployments/localhost.json", JSON.stringify(info, null, 2));
-console.log(info);
+  const file = path.join(__dirname, "..", "deployments", "localhost.json");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(
+    file,
+    JSON.stringify(
+      {
+        contractAddress,
+        chainId: 31337,
+        insurer: insurer.address,
+        client: client.address,
+        assessor: assessor.address,
+      },
+      null,
+      2,
+    ),
+  );
+  console.log("Įrašyta į deployments/localhost.json");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

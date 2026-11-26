@@ -1,17 +1,15 @@
 {
-  "name": "kasko",
+  "name": "blockchain-ld4",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Automobilio KASKO draudimo ismanioji sutartis ir DApp",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "node": "hardhat node",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "test": "hardhat test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "ethers": "^6.15.0",
     "hardhat": "^2.29.2"
   }
 }
