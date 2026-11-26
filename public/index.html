@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CarInsurance · Draudimo DApp</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="./style.css" />
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
-    <script defer src="app.js"></script>
+    <script defer src="./app.js"></script>
   </head>
 
   <body>
@@ -37,6 +37,11 @@
           <span id="connectionStatus" class="status-pill danger"
             >Neprisijungta</span
           >
+        </div>
+
+        <div class="balance-card">
+          <h3>Piniginės balansas:</h3>
+          <p id="walletBalance">— ETH</p>
         </div>
 
         <div class="connection-grid">
@@ -94,6 +99,13 @@
           <div class="stat">
             <span>Sukurta polisų:</span>
             <strong id="policyCount">—</strong>
+          </div>
+
+          <div class="history-card">
+            <h3>Veiksmų istorija</h3>
+            <div id="transactionHistory">
+              <p>Kol kas veiksmų nėra.</p>
+            </div>
           </div>
         </aside>
 
@@ -154,13 +166,9 @@
                 <strong id="assessor">—</strong>
               </div>
             </div>
-
-            <button id="refreshBtn" class="button ghost hidden" type="button">
-              Atnaujinti duomenis
-            </button>
           </section>
 
-          <section class="card create-card" id="createSection">
+          <section class="card create-card" id="createSection" hidden>
             <div class="section-heading">
               <div>
                 <p class="eyebrow">DRAUDIKUI</p>

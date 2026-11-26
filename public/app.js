@@ -69,7 +69,6 @@ const elements = {
   policyEmpty: document.getElementById("policyEmpty"),
   policyDetails: document.getElementById("policyDetails"),
   stateBadge: document.getElementById("stateBadge"),
-  refreshBtn: document.getElementById("refreshBtn"),
 
   carInfo: document.getElementById("carInfo"),
   premium: document.getElementById("premium"),
@@ -159,7 +158,10 @@ function formatETH(value) {
 }
 
 function setVisible(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
   element.classList.toggle("hidden", !visible);
+  element.style.display = "";
 }
 
 function showTransaction(title, text) {
@@ -188,8 +190,7 @@ function clearPolicy() {
 
   setVisible(elements.policyEmpty, true);
   setVisible(elements.policyDetails, false);
-  setVisible(elements.refreshBtn, false);
-
+  setVisible(elements.createSection, false);
   updateActionVisibility();
 }
 
@@ -203,8 +204,6 @@ async function connectWallet() {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
-
-    console.log("MetaMask grąžino paskyras:", accounts);
 
     if (!accounts || accounts.length === 0) {
       showMessage("MetaMask paskyra nepasirinkta.", "warning");
@@ -312,7 +311,6 @@ async function updatePolicyCount() {
     elements.policyCount.textContent = count.toString();
   } catch (error) {
     console.error("Nepavyko gauti polisų skaičiaus:", error);
-
     elements.policyCount.textContent = "Klaida";
   }
 }
@@ -464,13 +462,9 @@ async function loadPolicy(id) {
     currentPolicy = policy;
 
     displayPolicy(policy, currentPolicyId);
-
     updateRoleUI(policy, currentAccount);
-
     setVisible(elements.policyEmpty, false);
     setVisible(elements.policyDetails, true);
-    setVisible(elements.refreshBtn, true);
-
     showMessage("Poliso duomenys sėkmingai įkelti.", "success");
   } catch (error) {
     handleError(error);
@@ -482,16 +476,18 @@ function displayPolicy(policy, id) {
 
   elements.policyTitle.textContent = "Polisas #" + id;
   elements.stateBadge.textContent = policyStates[state] ?? "Nežinoma būsena";
-  elements.stateBadge.className =
-    "badge " + (policyStateClasses[state] ?? "neutral");
+
   elements.carInfo.textContent = policy.carInfo;
   elements.premium.textContent = formatETH(policy.premium);
   elements.coverage.textContent = formatETH(policy.maxCoverage);
   elements.claimAmount.textContent = formatETH(policy.claimAmount);
   elements.claimReason.textContent = policy.reason || "Nenurodyta";
+
   elements.insurer.textContent = shortenAddress(policy.insurer);
   elements.client.textContent = shortenAddress(policy.client);
   elements.assessor.textContent = shortenAddress(policy.assessor);
+  elements.stateBadge.className =
+    "badge " + (policyStateClasses[state] ?? "neutral");
 }
 
 async function loadLatestPolicy() {
@@ -543,42 +539,55 @@ function updateRoleUI(policy, account) {
 }
 
 function updateActionVisibility() {
+  const connected = Boolean(
+    currentAccount && signer && contract && correctNetwork,
+  );
+
   const policy = currentPolicy;
   const account = currentAccount;
-  const connected = Boolean(account && contract && correctNetwork);
 
   let isInsurer = false;
   let isClient = false;
   let isAssessor = false;
   let state = -1;
 
-  if (policy && account) {
+  if (connected && policy && account) {
     const address = account.toLowerCase();
+
     isInsurer = address === policy.insurer.toLowerCase();
     isClient = address === policy.client.toLowerCase();
     isAssessor = address === policy.assessor.toLowerCase();
+
     state = Number(policy.state);
   }
 
-  setVisible(elements.createSection, connected);
+  const canCreatePolicy = connected;
+  const canCancelAsInsurer = connected && isInsurer && state === 0;
   const canBuy = connected && isClient && state === 0;
   const canClaim = connected && isClient && state === 1;
-  const canAssess = connected && isAssessor && state === 2;
-  const canCancelAsInsurer = connected && isInsurer && state === 0;
   const canCancelAsClient = connected && isClient && state === 1;
+  const canAssess = connected && isAssessor && state === 2;
+
+  setVisible(elements.createSection, canCreatePolicy);
 
   setVisible(elements.buyAction, canBuy);
   setVisible(elements.claimAction, canClaim);
+  setVisible(elements.cancelClientAction, canCancelAsClient);
+  setVisible(elements.cancelInsurerAction, canCancelAsInsurer);
   setVisible(elements.approveAction, canAssess);
   setVisible(elements.rejectAction, canAssess);
-  setVisible(elements.cancelInsurerAction, canCancelAsInsurer);
-  setVisible(elements.cancelClientAction, canCancelAsClient);
 
   const hasAction =
-    canBuy || canClaim || canAssess || canCancelAsInsurer || canCancelAsClient;
+    canCreatePolicy ||
+    canBuy ||
+    canClaim ||
+    canAssess ||
+    canCancelAsInsurer ||
+    canCancelAsClient;
 
-  setVisible(elements.noActionsMessage, !hasAction);
+  setVisible(elements.noActionsMessage, connected && !hasAction);
 
+  elements.createBtn.disabled = !canCreatePolicy || transactionPending;
   elements.buyBtn.disabled = !canBuy || transactionPending;
   elements.claimBtn.disabled = !canClaim || transactionPending;
   elements.approveBtn.disabled = !canAssess || transactionPending;
@@ -586,7 +595,6 @@ function updateActionVisibility() {
   elements.cancelInsurerBtn.disabled =
     !canCancelAsInsurer || transactionPending;
   elements.cancelClientBtn.disabled = !canCancelAsClient || transactionPending;
-  elements.createBtn.disabled = !connected || transactionPending;
 }
 
 async function executeTransaction(title, action) {
@@ -629,8 +637,10 @@ async function executeTransaction(title, action) {
     }
 
     showMessage("Transakcija sėkmingai patvirtinta.", "success");
+    return true;
   } catch (error) {
     handleError(error);
+    return false;
   } finally {
     transactionPending = false;
 
@@ -686,11 +696,13 @@ async function createPolicy(event) {
       throw new Error("Rezervas turi būti didesnis už įmoką.");
     }
 
-    await executeTransaction("Kuriamas draudimo polisas", () =>
+    const success = await executeTransaction("Kuriamas draudimo polisas", () =>
       contract.createPolicy(client, assessor, carInfo, premiumWei, {
         value: reserveWei,
       }),
     );
+
+    if (!success) return;
 
     elements.createForm.reset();
 
@@ -863,12 +875,6 @@ elements.loadPolicyBtn.addEventListener("click", () => {
 });
 
 elements.latestBtn.addEventListener("click", loadLatestPolicy);
-
-elements.refreshBtn.addEventListener("click", () => {
-  if (currentPolicyId !== null) {
-    loadPolicy(currentPolicyId);
-  }
-});
 
 elements.createForm.addEventListener("submit", createPolicy);
 elements.buyBtn.addEventListener("click", buyPolicy);
