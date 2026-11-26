@@ -19,6 +19,17 @@ contract CarInsurance {
     uint256 public policyCount;
     bool private locked;
 
+    address public authorizedInsurer;
+
+    constructor() {
+        authorizedInsurer = msg.sender;
+    }
+
+    modifier onlyAuthorizedInsurer() {
+        require(msg.sender == authorizedInsurer, "Only authorized insurer");
+        _;
+    }
+
     event PolicyCreated(uint256 indexed policyId, address indexed insurer, address indexed client, address assessor, uint256 premium, uint256 maxCoverage);
     event PolicyBought(uint256 indexed policyId);
     event ClaimSubmitted(uint256 indexed policyId, uint256 claimAmount, string reason);
@@ -44,7 +55,7 @@ contract CarInsurance {
         address assessor,
         string calldata carInfo,
         uint256 premium
-    ) external payable nonReentrant returns (uint256) {
+    ) external payable nonReentrant onlyAuthorizedInsurer returns (uint256) {
         require(client != address(0) && assessor != address(0), "Zero address");
         require(msg.sender != client && msg.sender != assessor && client != assessor, "Participants must differ");
         require(bytes(carInfo).length > 0, "Car info is empty");
