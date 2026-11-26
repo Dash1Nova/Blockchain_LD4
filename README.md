@@ -1,128 +1,258 @@
 # Blockchain_LD4
 
-## Sprendžiama problema
+## Paleidimas
 
-Tradiciniame automobilio draudime klientas privalo pasitikėti draudimo bendrove, kad įvykus draudiminiam įvykiui įmonė turės
-pakankamai pinigų ir išmokės žalos atlyginimą, o bendrovė rizikuoja susidurti su nepagrįstomis ar suklastotomis pretenzijomis.
-Ši išmanioji sutartis išsprendžia abipusio pasitikėjimo problemą: ji laikinai užšaldo draudiko išmokos rezervą ir kliento draudimo įmoką blokų grandinėje. Sukauptos lėšos paskirstomos automatiškai pagal iš anksto sutartyje užfiksuotas taisykles tik tada, kai nepriklausomas žalų ekspertas patvirtina įvykį ir žalos dydį.
+Prieš pradedant reikia įsidiegti:
 
-## Dalyviai
+- **Node.js** – leidžia vykdyti JavaScript programas ir naudoti npm.
+- **Visual Studio Code (VS Code)** – projekto failams atidaryti ir redaguoti.
+- **MetaMask** – naršyklės piniginė, skirta prisijungti prie blokų grandinės ir patvirtinti operacijas.
+- **Microsoft Edge** arba kitą palaikomą naršyklę.
+  Paleidimo eiga:
 
-Procese dalyvauja trys šalys (demonstruojamos skirtingomis Ethereum paskyromis):
-
-1. **Draudikas (Insurer)** – draudimo paslaugos teikėjas, formuoja polisą ir garantuoja išmokos rezervą.
-2. **Klientas (Client)** – automobilio savininkas, įsigyja draudimo polisą ir gali registruoti patirtą žalą.
-3. **Žalų ekspertas (Assessor)** – nepriklausomas vertintojas (pvz., autoservisas arba nepriklausomas ekspertas), vertina įvykio pagrįstumą.
-
-## Dalyvių teisės
-
-- **Draudikas (Insurer):**
-  - Sukurti naują draudimo polisą nurodant automobilio duomenis, įmokos kainą, kliento bei eksperto adresus, ir įnešti maksimalios išmokos rezervą.
-  - Atšaukti dar kliento nenupirktą polisą (`Created` būsenoje) ir susigrąžinti visą įneštą rezervą.
-  - Negali vienašališkai atsiimti lėšų po to, kai klientas aktyvuoja polisą, ir negali pats vertinti pretenzijų.
-- **Klientas (Client):**
-  - Nupirkti jam skirtą polisą, pervesdamas tikslią draudimo įmokos sumą.
-  - Nutraukti aktyvų polisą (`Active` būsenoje) iki draudiminio įvykio ir susigrąžinti 80 % įmokos.
-  - Užregistruoti draudiminį įvykį (pateikti pretenziją) galiojančiam polisui.
-  - Negali pats patvirtinti savo žalos ir negali reikalauti didesnės išmokos nei maksimali poliso suma.
-- **Žalų ekspertas (Assessor):**
-  - Patvirtinti arba atmesti kliento pateiktą pretenziją (`ClaimSubmitted` būsenoje).
-  - Negali keisti poliso sumų ar atsiimti sutartyje esančių lėšų.
-
-## Pagrindinis scenarijus
-
-1. Draudikas sukuria draudimo polisą, nustato įmokos dydį ir įneša išmokos rezervą į sutartį.
-2. Klientas nusiperka polisą ir sumoka draudimo įmoką į sutartį.
-3. Įvykus avarijai, klientas užregistruoja pretenziją ir nurodo žalos sumą.
-4. Žalų ekspertas įvertina įvykį ir patvirtina žalą; klientui išmokama žalos suma, o draudikui grąžinamas rezervo likutis ir įmoka.
-5. Jei žalų ekspertas pretenziją atmeta, visas rezervas ir kliento įmoka grąžinami draudikui.
-6. Kol polisas dar nenupirktas, draudikas gali jį atšaukti ir susigrąžinti visą rezervo sumą; o jau aktyvų polisą iki įvykio gali nutraukti klientas ir susigrąžinti 80 % įmokos.
-
-## Proceso taisyklės
-
-- **Role pagrįsta prieiga:** Kiekvieną būseną keičiančią funkciją gali iškviesti tik konkrečiam polisui priskirtas dalyvio adresas (`insurer`, `client` arba `assessor`).
-- **Dalyvių atskyrimas:** Draudiko, kliento ir eksperto adresai privalo būti trys skirtingi, nenuliniai adresai.
-- **Griežta veiksmų seka:** Veiksmai leidžiami tik atitinkamoje būsenoje (pvz., negalima pateikti pretenzijos neapmokėtam polisui arba atšaukti poliso jau pateikus pretenziją).
-- **Tiksli lėšų apskaita:**
-  - Kurdamas polisą draudikas privalo įnešti rezervą, didesnį už įmoką.
-  - Pirkdamas polisą klientas privalo sumokėti lygiai tokią sumą, kokia nurodyta polise.
-  - Prašoma žalos suma turi būti didesnė už `0` ir neviršyti maksimalios išmokos.
-- **Apsauga nuo pakartotinio išmokėjimo:** Pasiekus galutinę būseną (`PaidOut`, `Rejected` arba `Cancelled`), polisas užrakinamas ir joks pakartotinis lėšų išmokėjimas ar būsenos keitimas yra neįmanomas.
-
-## Dalyvių sąveika pateikiama sekų diagrama
-
-<img width="1114" height="812" alt="sequence_diagram_blockchain" src="https://github.com/user-attachments/assets/1b41326d-5da3-459b-9e1a-f6068a3db4da" />
-
-**Trumpas diagramos veiksmų paaiškinimas:**
-
-- **1 veiksmas (`createPolicy`):** Draudikas sukuria polisą ir į sutartį perveda maksimalios išmokos rezervą.
-- **2 veiksmas (`buyPolicy`):** Klientas aktyvuoja draudimą, sumokėdamas polise nustatytą įmoką.
-- **3a / 3b veiksmai (`cancelByInsurer` / `cancelByClient`):** Alternatyvios atšaukimo eigos – draudikas gali atšaukti dar nenupirktą polisą, o klientas gali nutraukti aktyvų polisą su 20 % bauda.
-- **4 veiksmas (`submitClaim`):** Klientas užregistruoja draudiminį įvykį, nurodydamas remonto sumą ir aprašymą.
-- **5a / 5b veiksmai (`approveClaim` / `rejectClaim`):** Ekspertas užbaigia procesą – patvirtinus žalą, sutartis padalina lėšas tarp kliento ir draudiko, o atmetus – visas lėšas grąžina draudikui.
-
-## Ką užtikrina sutartis, kokios prielaidos/apribojimai lieka
-
-- **Ką užtikrina sutartis:**
-  - Užtikrina, kad lėšos tikrai yra rezervuotos sutartyje dar prieš klientui perkant polisą.
-  - Užtikrina, kad nei draudikas, nei klientas negali vienašališkai pasisavinti svetimų lėšų.
-  - Garantuojamas lėšų paskirstymas pagal eksperto sprendimą ir apsauga nuo pakartotinio išmokėjimo.
-  - Visi esminiai būsenos pokyčiai užfiksuojami blokų grandinės įvykiais (_events_).
-- **Prielaidos ir apribojimai:**
-  - Išmanioji sutartis pati negali patikrinti, ar tikrai įvyko avarija ir kokia yra reali remonto kaina, todėl remiasi prielaida, kad žalų ekspertas yra sąžiningas.
-  - Visi blokų grandinėje įrašyti duomenys (adresai, sumos, įvykio aprašymas) yra viešai matomi, todėl jautrūs asmens duomenys ar avarijos nuotraukos turėtų būti saugomi už grandinės ribų.
-  - Jei klientas nenusiperka sukurto poliso, draudikas gali atgauti lėšas per `cancelByInsurer`. Tačiau jei klientas pateikė pretenziją, o ekspertas delsia priimti sprendimą, šioje versijoje lėšos lieka užšaldytos sutartyje iki sprendimo priėmimo (ateityje tai būtų galima spręsti įvedant laiko terminus per `block.timestamp`).
-
-## Mano modelio skirtumas nuo bazinio scenarijaus:
-
-Mano modelis nėra tęsinys/patobulinimas užduoties apraše pateikto modelio, bet noriu pagrįsti, kodėl mano modelis yra solidus, nes jis keičia lėšų saugojimo, būsenų ir sprendimų priėmimo logiką šiais sprendimais:
-
-1. **Dvipusis lėšų užšaldymas (_Two-sided Escrow_):** Baziniame modelyje pinigus į sutartį įneša tik viena šalis (pirkėjas). Šiame modelyje sutartis vienu metu valdo ir apskaito **dviejų skirtingų šalių lėšas** – draudiko iš anksto užšaldytą didelį išmokos rezervą (`maxCoverage`) ir kliento sumokėtą draudimo įmoką (`premium`).
-2. **Kintama žalos suma ir lėšų padalinimas vienoje transakcijoje:** Baziniame modelyje išmokama visa iš anksto fiksuota prekės kaina. Draudimo modelyje klientas nurodo faktinę remonto sumą (`claimAmount`), o ekspertui patvirtinus, sutartis atlieka **dvigubą išmokėjimą**: dalį rezervo perveda klientui žalai padengti, o nepanaudotą rezervo likutį kartu su įmoka apskaičiuoja ir grąžina draudikui.
-3. **Dvi skirtingos atšaukimo eigos su procentine bauda:** Vietoj paprasto 100 % pinigų grąžinimo, įgyvendintos dvi nutraukimo šakos: draudikas gali atšaukti dar nenupirktą polisą susigrąžindamas 100 % rezervo, o klientas gali nutraukti jau aktyvų polisą tik su **80/20 taisykle** (atgauna 80 % įmokos, o 20 % lieka draudikui kaip administracinis mokestis).
-4. **Kelių polisų registras:** Vietoj vienos prekės ir vieno užsakymo, sutartyje suprojektuotas neriboto skaičiaus draudimo polisų valdymas pagal unikalų poliso identifikatorių (`mapping(uint256 => Policy)`).
-
-## Diegimas, pradiniai duomenys ir testavimas (v0.1)
-
-### Projekto paruošimas ir testavimas
-
-Norint įdiegti priklausomybes ir paleisti automatinius testus, terminale įvesti komandą:
+1. Atsisiųsti projekto aplanką į kompiuterį.
+2. Terminale įvykdyti komandą (ši komanda įdiegia visas projekte naudojamas bibliotekas ir įrankius, nurodytus `package.json` faile):
 
 ```bash
 npm install
-npm test
 ```
 
-### Diegimo scenarijus ir komandos
+3. Atidaryti naują terminalo langą ir įvykdyti:
 
-Sutarties diegimas atliekamas per scenarijų `scripts/deploy.js`. Tam reikalingi du terminalai:
+```bash
+npm run node
+```
 
-- **1 terminalas** (paleidžia vietinį Hardhat Ethereum tinklą adresu `http://127.0.0.1:8545`, Chain ID `31337`):
-  ```bash
-  npm run node
-  ```
-- **2 terminalas** (įdiegia sutartį į vietinį tinklą ir sukuria pradinį polisą):
-  ```bash
-  npm run deploy
-  ```
-- **Pilnos sėkmingos eigos simuliacija vietiniame tinkle**:
-  ```bash
-  npm run demo
-  ```
+Jeigu projekte nėra tokio npm scenarijaus, naudoti:
 
-### Pradinės dalyvių paskyros (Hardhat lokalus tinklas)
+```bash
+npx hardhat node
+```
 
-Diegimo scenarijus (`scripts/deploy.js`) automatiškai priskiria pirmąsias tris vietinio Hardhat tinklo testines paskyras:
+Šis terminalas turi likti atidarytas, kol naudojama programa. Jame paleidžiamas vietinis „Hardhat“ blokų grandinės tinklas.
 
-- **Draudikas (`Insurer`):** Hardhat paskyra `#0` (`0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`)
-- **Klientas (`Client`):** Hardhat paskyra `#1` (`0x70997970C51812dc3A010C7d01b50e0d17dc79C8`)
-- **Žalų ekspertas (`Assessor`):** Hardhat paskyra `#2` (`0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`)
+Naudojami tinklo nustatymai:
 
-### Pradiniai duomenys
+- RPC adresas: `http://127.0.0.1:8545`
+- Chain ID: `31337`
+- Tinklas: `Hardhat Localhost`
 
-Diegimo metu sutartyje automatiškai sukuriamas pirmasis demonstracinis polisas (`policyId = 1`) su šiais duomenimis:
+4. Atidaryti kitą terminalą ir įvykdyti:
 
-- **Automobilis (`carInfo`):** `Toyota Corolla, 2020, DEMO-001`
-- **Draudimo įmoka (`premium`):** `0.1 ETH` (`100000000000000000 wei`)
-- **Išmokos rezervas (`maxCoverage`):** `1.0 ETH` (`1000000000000000000 wei`)
-- **Pradinė būsena:** `Created`
+```bash
+npm run deploy
+```
+
+5. Įdiegti `CarInsurance` išmaniąją sutartį į vietinį blokų grandinės tinklą:
+
+```bash
+npx hardhat run scripts/deploy.js --network localhost
+```
+
+Po įdiegimo terminale pateikiamas išmaniosios sutarties adresas. Jį reikia įrašyti į frontend JavaScript failą ten, kur apibrėžiamas `contractAddress`.
+
+**Svarbu:** jeigu vietinis „Hardhat“ tinklas paleidžiamas iš naujo, ankstesnis sutarties įdiegimas nebegalioja. Tokiu atveju sutartį reikia įdiegti iš naujo ir atnaujinti jos adresą frontend faile.
+
+6. Naršyklėje atidaryti „MetaMask“.
+7. Pridėti arba pasirinkti tinklų sąraše vietinį tinklą su šiais parametrais:
+
+   - Network name: `Hardhat Localhost`
+   - RPC URL: `http://127.0.0.1:8545`
+   - Chain ID: `31337`
+   - Currency symbol: `ETH`
+
+8. Importuoti vietinio „Hardhat“ tinklo testinių paskyrų adresus, naudojant testinius privačius raktus.
+9. Atidaryti projekto `index.html` failą naršyklėje.
+
+## Automatiniai išmaniosios sutarties testai (v0.2)
+
+Automatiniai išmaniosios sutarties testai realizuoti faile `test/CarInsurance.test.js`, naudojant „Hardhat“, „Ethers.js“ ir „Chai“ įrankius.
+
+Testais tikrinamas pagrindinis draudimo proceso scenarijus, dalyvių teisės, netinkamų duomenų apdorojimas, veiksmų eiliškumas, pakartotinių veiksmų prevencija, poliso atšaukimas ir lėšų apskaita.
+
+Kiekvienam testui sukuriama nauja išmaniosios sutarties kopija ir paruošiamos keturios testinės paskyros:
+
+- **Draudikas (`Insurer`)** – sukuria draudimo polisą.
+- **Klientas (`Client`)** – įsigyja polisą ir pateikia žalos prašymą.
+- **Žalų vertintojas (`Assessor`)** – patvirtina arba atmeta žalos prašymą.
+- **Svetimas dalyvis (`Stranger`)** – naudojamas bandant atlikti veiksmus, kuriems neturi teisių.
+
+Testuose naudojamos pradinės reikšmės:
+
+- Draudimo įmoka (`premium`) – 0.1 ETH.
+- Maksimalios išmokos rezervas (`reserve`) – 1 ETH.
+- Žalos prašymo suma (`claim`) – 0.4 ETH.
+- Automobilis – „Toyota Corolla, 2020, DEMO-001“.
+
+## Automatinių testų aprašymas
+
+Automatinių testų failas: `test/CarInsurance.test.js`
+
+Testų paleidimas:
+
+```bash
+npx hardhat test
+```
+
+### Pagrindinio proceso testas
+
+**Testas:** `sėkminga eiga: sukūrimas, pirkimas, žalos pateikimas ir patvirtinimas`
+
+Tikrina:
+
+- Klientas gali įsigyti jam sukurtą polisą sumokėdamas 0.1 ETH įmoką.
+- Įsigijus polisą jo būsena pasikeičia į `Active`.
+- Klientas gali pateikti 0.4 ETH žalos prašymą.
+- Pateikus prašymą poliso būsena pasikeičia į `ClaimSubmitted`.
+- Vertintojas gali patvirtinti žalos prašymą.
+- Patvirtinus prašymą poliso būsena pasikeičia į `PaidOut`.
+- Klientas gauna 0.4 ETH išmoką.
+- Draudikas gauna 0.7 ETH.
+- Po išmokėjimo išmaniosios sutarties balansas yra 0 ETH.
+
+### Dalyvių teisių testai
+
+**Testas:** `tik klientas gali įsigyti jam skirtą polisą`.
+
+Tikrina, ar svetimas asmuo negali įsigyti kitam klientui skirto poliso. Taip pat tikrinama, ar poliso būsena lieka `Created`.
+
+**Testas:** `klientas negali patvirtinti žalos prašymo`.
+
+Tikrina, ar klientas negali pats patvirtinti savo pateikto žalos prašymo. Po atmesto veiksmo būsena lieka `ClaimSubmitted`.
+
+**Testas:** `svetimas asmuo negali patvirtinti žalos prašymo`.
+
+Tikrina, ar su polisu nesusijęs asmuo negali patvirtinti žalos prašymo. Po atmesto veiksmo būsena lieka `ClaimSubmitted`.
+
+**Testas:** `vertintojas negali pateikti žalos prašymo kliento vardu`.
+
+Tikrina, ar vertintojas negali pateikti žalos prašymo vietoj kliento. Po atmesto veiksmo būsena lieka `Active`.
+
+**Testas:** `svetimas asmuo negali atšaukti draudiko vardu`.
+
+Tikrina, ar svetimas asmuo negali atšaukti draudikui priklausančio poliso. Po atmesto veiksmo būsena lieka `Created`.
+
+### Netinkamų duomenų testai
+
+**Testas:** `neleidžia sukurti poliso su nuline įmoka`.
+
+Tikrina, ar poliso negalima sukurti nustačius 0 ETH draudimo įmoką.
+
+**Testas:** `neleidžia sukurti poliso, kai rezervas nėra didesnis už įmoką`.
+
+Tikrina, ar poliso negalima sukurti, kai įneštas rezervas yra lygus draudimo įmokai.
+
+**Testas:** `neleidžia sukurti poliso su nuliniu kliento adresu`.
+
+Tikrina, ar kuriant polisą negalima nurodyti nulinio kliento adreso (`address(0)`).
+
+**Testas:** `neleidžia pateikti nulinės žalos sumos`.
+
+Tikrina, ar klientas negali pateikti žalos prašymo, kurio suma yra 0 ETH. Atmetus veiksmą būsena lieka `Active`.
+
+**Testas:** `neleidžia pateikti didesnės žalos nei maksimalus rezervas`.
+
+Tikrina, ar klientas negali pateikti žalos prašymo, kurio suma viršija maksimalų draudimo rezervą. Atmetus veiksmą būsena lieka `Active`.
+
+**Testas:** `neleidžia pateikti žalos be priežasties`.
+
+Tikrina, ar žalos prašyme privaloma nurodyti priežastį.
+
+### Veiksmų eiliškumo ir pakartotinių veiksmų testai
+
+**Testas:** `neleidžia pateikti žalos, kol polisas neįsigytas`.
+
+Tikrina, ar klientas negali pateikti žalos prašymo, kol polisas yra `Created` būsenoje. Po atmesto veiksmo būsena lieka `Created`.
+
+**Testas:** `neleidžia įsigyti poliso antrą kartą`.
+
+Tikrina, ar klientas negali antrą kartą įsigyti jau aktyvuoto poliso. Po atmesto veiksmo būsena lieka `Active`.
+
+**Testas:** `neleidžia pateikti antro žalos prašymo`.
+
+Tikrina, ar klientas negali pateikti antro žalos prašymo, kai pirmasis jau pateiktas. Po atmesto veiksmo būsena lieka `ClaimSubmitted`.
+
+**Testas:** `neleidžia patvirtinti žalos du kartus`.
+
+Tikrina, ar vertintojas negali antrą kartą patvirtinti jau patvirtinto žalos prašymo. Po atmesto veiksmo būsena lieka `PaidOut`.
+
+### Žalos atmetimo ir poliso atšaukimo testai
+
+**Testas:** `vertintojas gali atmesti žalos prašymą`.
+
+Tikrina:
+
+- Vertintojas gali atmesti pateiktą žalos prašymą.
+- Poliso būsena pasikeičia į `Rejected`.
+- Draudikas gauna 1.1 ETH.
+- Po operacijos išmaniosios sutarties balansas yra 0 ETH.
+
+**Testas:** `draudikas gali atšaukti dar neįsigytą polisą`.
+
+Tikrina:
+
+- Draudikas gali atšaukti `Created` būsenos polisą.
+- Iškviečiamas poliso atšaukimo įvykis su 1 ETH grąžinama suma.
+- Poliso būsena pasikeičia į `Cancelled`.
+- Draudikui grąžinamas 1 ETH rezervas.
+- Po operacijos išmaniosios sutarties balansas yra 0 ETH.
+
+**Testas:** `klientas gali atšaukti aktyvų polisą ir atgauti 80 procentų įmokos`.
+
+Tikrina:
+
+- Klientas gali atšaukti `Active` būsenos polisą.
+- Poliso būsena pasikeičia į `Cancelled`.
+- Atšaukimo įvykyje nurodoma, kad klientui grąžinama 0.08 ETH.
+- Draudikui tenkanti suma yra 1.02 ETH.
+- Patikrinama, kad draudiko balansas padidėja 1.02 ETH.
+- Po operacijos išmaniosios sutarties balansas yra 0 ETH.
+
+**Testas:** `neleidžia klientui atšaukti dar neįsigyto poliso`.
+
+Tikrina, ar klientas negali atšaukti dar neįsigyto, `Created` būsenoje esančio poliso. Po atmesto veiksmo būsena lieka `Created`.
+
+Iš viso įgyvendinta **20 automatinių testų** ir visi sėkmingai praėjo.
+
+![alt text](image.png)
+
+## GUI ekranvaizdžiai
+
+### Neprisijungta vūsena
+
+![alt text](image-1.png)
+
+### Prisijungta kaip draudikas
+
+![alt text](image-2.png)
+![alt text](image-3.png)
+
+### Prisijungta kaip klientas
+
+![alt text](image-4.png)
+
+### Prisijungta kaip žalų ekspertas
+
+![alt text](image-5.png)
+
+## Rankinis patikrinimas
+
+## Rankinio testavimo atvejai
+
+| Nr. | Testavimo veiksmas                   | Kaip atlikti                                                                                    | Laukiamas rezultatas                                                                                         | Rezultatas        | Įrodymas (ekranvaizdis)   |
+| --: | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------- |
+|   1 | Sukurti polisą                       | Draudiko paskyra sukuria polisą su klientu ir vertintoju                                        | Poliso būsena `Created`, rezervas užfiksuotas sutartyje                                                      | Sėkmingai atlikta | ![alt text](image-6.png)  |
+|   2 | Neleistinas poliso sukūrimas         | Sukuriams polisas, kur įmoka didesnė už rezervą                                                 | Transakcija atmetama, polisas nesukuriamas, apskaita nepasikeičia                                            | Sėkmingai atlikta | ![alt text](image-7.png)  |
+|   3 | Įsigyti polisą                       | Iš kliento paskyros sumokėti tikslią įmoką                                                      | Būsena pasikeičia į `Active`                                                                                 | Sėkmingai atlikta | ![alt text](image-8.png)  |
+|   4 | Pirkti svetimo asmens vardu          | Įsigyti polisą iš pašalinio adreso                                                              | Veiksmas atmetamas, neleidžiama prisijungti                                                                  | Sėkmingai atlikta | ![alt text](image-9.png)  |
+|   5 | Pateikti žalą                        | Klientas pateikia leistiną žalos sumą ir priežastį                                              | Būsena pasikeičia į `ClaimSubmitted`                                                                         | Sėkmingai atlikta | ![alt text](image-10.png) |
+|   6 | Pateikti žalą kaip pašalinis asmuo   | Prisijugus kitu adresu bandoma pateikti žalą                                                    | Veiksmas atmetamas, nėra rodomas reikiamas funkcionalumas                                                    | Sėkmingai atlikta | ![alt text](image-9.png)  |
+|   7 | Patvirtinti žalą                     | Žalų vertintojas patvirtina pateiktą žalą                                                       | Būsena tampa `PaidOut`, išmokos atliekamos pagal sutarties taisykles                                         | Sėkmingai atlikta | ![alt text](image-11.png) |
+|   8 | Atmesti žalą                         | Kitam polisui žalų vertintojas atmeta pateiktą žalą                                             | Būsena tampa `Rejected`, išmoka atliekama pagal sutarties taisykles                                          | Sėkmingai atlikta | ![alt text](image-12.png) |
+|   9 | Atmesti veiksmą netinkamu adresu     | Klientas arba pašalinis asmuo bando patvirtinti arba atmesti žalą                               | Nėra rodomas šiam veiksmui reikalingas funkcionalumas                                                        | Sėkmingai atlikta | ![alt text](image-9.png)  |
+|  10 | Pakartoti jau įvykdytą veiksmą       | Bandoma dar kartą patvirtinti jau išmokėtą žalą                                                 | Antra išmoka neatliekama, būsena lieka `PaidOut`, nėra rodoma pakartotinam veiksmui reikalingo funkcionalumo | Sėkmingai atlikta | ![alt text](image-11.png) |
+|  11 | Atšaukti polisą draudiko vardu       | Draudikas bando atšaukti `Created` polisą                                                       | Būsena tampa `Cancelled`, rezervas grąžinamas draudikui                                                      | Sėkmingai atlikta | ![alt text](image-13.png) |
+|  12 | Atšaukti aktyvų polisą kliento vardu | Klientas atšaukia `Active` polisą                                                               | Būsena tampa `Cancelled`, klientui grąžinama sutartyje numatytos įmokos dalis (80%)                          | Sėkmingai atlikta | ![alt text](image-14.png) |
+|  13 | Atšaukti polisą su pateikta žala     | Bandoma atšaukti polisą kliento vardu po žalos prašymo pateikimo, kurio būsena `ClaimSubmitted` | Veiksmas atmetamas, nėra rodomas šiam veiksmui reikalingas funkcionalumas                                    | Sėkmingai atlikta | ![alt text](image-15.png) |
+
+**Pastaba:** klientas gali atšaukti tik `Active` polisą, o draudikas – tik `Created` polisą.
