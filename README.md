@@ -214,26 +214,26 @@ Tikrina, ar klientas negali atšaukti dar neįsigyto, `Created` būsenoje esanč
 
 Iš viso įgyvendinta **20 automatinių testų** ir visi sėkmingai praėjo.
 
-![alt text](image.png)
+<img width="776" height="603" alt="image" src="https://github.com/user-attachments/assets/69a1d325-8c99-4b18-befa-36c5555ed82e" />
 
 ## GUI ekranvaizdžiai
 
 ### Neprisijungta vūsena
 
-![alt text](image-1.png)
+<img width="1736" height="915" alt="image-1" src="https://github.com/user-attachments/assets/3a313c22-2061-4dee-b09e-fd654c2de6ca" />
 
 ### Prisijungta kaip draudikas
 
-![alt text](image-2.png)
-![alt text](image-3.png)
+<img width="1183" height="917" alt="image-2" src="https://github.com/user-attachments/assets/36808760-b6b6-4a9c-937b-46fadaba9e06" />
+<img width="1015" height="917" alt="image-3" src="https://github.com/user-attachments/assets/496adfb0-a8db-4f21-8f0a-deab0ffdae09" />
 
 ### Prisijungta kaip klientas
 
-![alt text](image-4.png)
+<img width="1007" height="920" alt="image-4" src="https://github.com/user-attachments/assets/e76a11d7-eee2-4a42-8a0f-9b9ef27d3058" />
 
 ### Prisijungta kaip žalų ekspertas
 
-![alt text](image-5.png)
+<img width="1012" height="917" alt="image-5" src="https://github.com/user-attachments/assets/9c3989ff-15a4-42ea-8fad-0290198473e3" />
 
 ## Rankinis patikrinimas
 
@@ -241,18 +241,30 @@ Iš viso įgyvendinta **20 automatinių testų** ir visi sėkmingai praėjo.
 
 | Nr. | Testavimo veiksmas                   | Kaip atlikti                                                                                    | Laukiamas rezultatas                                                                                         | Rezultatas        | Įrodymas (ekranvaizdis)   |
 | --: | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------- |
-|   1 | Sukurti polisą                       | Draudiko paskyra sukuria polisą su klientu ir vertintoju                                        | Poliso būsena `Created`, rezervas užfiksuotas sutartyje                                                      | Sėkmingai atlikta | ![alt text](image-6.png)  |
-|   2 | Neleistinas poliso sukūrimas         | Sukuriams polisas, kur įmoka didesnė už rezervą                                                 | Transakcija atmetama, polisas nesukuriamas, apskaita nepasikeičia                                            | Sėkmingai atlikta | ![alt text](image-7.png)  |
-|   3 | Įsigyti polisą                       | Iš kliento paskyros sumokėti tikslią įmoką                                                      | Būsena pasikeičia į `Active`                                                                                 | Sėkmingai atlikta | ![alt text](image-8.png)  |
-|   4 | Pirkti svetimo asmens vardu          | Įsigyti polisą iš pašalinio adreso                                                              | Veiksmas atmetamas, neleidžiama prisijungti                                                                  | Sėkmingai atlikta | ![alt text](image-9.png)  |
-|   5 | Pateikti žalą                        | Klientas pateikia leistiną žalos sumą ir priežastį                                              | Būsena pasikeičia į `ClaimSubmitted`                                                                         | Sėkmingai atlikta | ![alt text](image-10.png) |
-|   6 | Pateikti žalą kaip pašalinis asmuo   | Prisijugus kitu adresu bandoma pateikti žalą                                                    | Veiksmas atmetamas, nėra rodomas reikiamas funkcionalumas                                                    | Sėkmingai atlikta | ![alt text](image-9.png)  |
-|   7 | Patvirtinti žalą                     | Žalų vertintojas patvirtina pateiktą žalą                                                       | Būsena tampa `PaidOut`, išmokos atliekamos pagal sutarties taisykles                                         | Sėkmingai atlikta | ![alt text](image-11.png) |
-|   8 | Atmesti žalą                         | Kitam polisui žalų vertintojas atmeta pateiktą žalą                                             | Būsena tampa `Rejected`, išmoka atliekama pagal sutarties taisykles                                          | Sėkmingai atlikta | ![alt text](image-12.png) |
-|   9 | Atmesti veiksmą netinkamu adresu     | Klientas arba pašalinis asmuo bando patvirtinti arba atmesti žalą                               | Nėra rodomas šiam veiksmui reikalingas funkcionalumas                                                        | Sėkmingai atlikta | ![alt text](image-9.png)  |
-|  10 | Pakartoti jau įvykdytą veiksmą       | Bandoma dar kartą patvirtinti jau išmokėtą žalą                                                 | Antra išmoka neatliekama, būsena lieka `PaidOut`, nėra rodoma pakartotinam veiksmui reikalingo funkcionalumo | Sėkmingai atlikta | ![alt text](image-11.png) |
-|  11 | Atšaukti polisą draudiko vardu       | Draudikas bando atšaukti `Created` polisą                                                       | Būsena tampa `Cancelled`, rezervas grąžinamas draudikui                                                      | Sėkmingai atlikta | ![alt text](image-13.png) |
-|  12 | Atšaukti aktyvų polisą kliento vardu | Klientas atšaukia `Active` polisą                                                               | Būsena tampa `Cancelled`, klientui grąžinama sutartyje numatytos įmokos dalis (80%)                          | Sėkmingai atlikta | ![alt text](image-14.png) |
-|  13 | Atšaukti polisą su pateikta žala     | Bandoma atšaukti polisą kliento vardu po žalos prašymo pateikimo, kurio būsena `ClaimSubmitted` | Veiksmas atmetamas, nėra rodomas šiam veiksmui reikalingas funkcionalumas                                    | Sėkmingai atlikta | ![alt text](image-15.png) |
+|   1 | Sukurti polisą                       | Draudiko paskyra sukuria polisą su klientu ir vertintoju                                        | Poliso būsena `Created`, rezervas užfiksuotas sutartyje                                                      | Sėkmingai atlikta | <img width="1277" height="733" alt="image-6" src="https://github.com/user-attachments/assets/ce96e827-17e6-495a-afe8-aa93960dab3b" /> |
+|   2 | Neleistinas poliso sukūrimas         | Sukuriams polisas, kur įmoka didesnė už rezervą                                                 | Transakcija atmetama, polisas nesukuriamas, apskaita nepasikeičia                                            | Sėkmingai atlikta | <img width="1285" height="880" alt="image-7" src="https://github.com/user-attachments/assets/4807513c-4019-4cb7-a613-cb2120c2ead3" />
+  |
+|   3 | Įsigyti polisą                       | Iš kliento paskyros sumokėti tikslią įmoką                                                      | Būsena pasikeičia į `Active`                                                                                 | Sėkmingai atlikta | <img width="1780" height="905" alt="image-8" src="https://github.com/user-attachments/assets/a099360a-5fd9-4d3a-b9fa-622ecbf2c447" />
+  |
+|   4 | Pirkti svetimo asmens vardu          | Įsigyti polisą iš pašalinio adreso                                                              | Veiksmas atmetamas, neleidžiama prisijungti                                                                  | Sėkmingai atlikta | <img width="1783" height="923" alt="image-9" src="https://github.com/user-attachments/assets/7ca1f8db-7221-4441-950a-4adaa28fdda0" />
+  |
+|   5 | Pateikti žalą                        | Klientas pateikia leistiną žalos sumą ir priežastį                                              | Būsena pasikeičia į `ClaimSubmitted`                                                                         | Sėkmingai atlikta | <img width="1132" height="920" alt="image-10" src="https://github.com/user-attachments/assets/4f55419e-ec03-4016-9bfd-7137f2c48f52" />
+ |
+|   6 | Pateikti žalą kaip pašalinis asmuo   | Prisijugus kitu adresu bandoma pateikti žalą                                                    | Veiksmas atmetamas, nėra rodomas reikiamas funkcionalumas                                                    | Sėkmingai atlikta | <img width="1783" height="923" alt="image-9" src="https://github.com/user-attachments/assets/d17143c2-20ad-4a46-ae4c-45928a5d5522" />
+  |
+|   7 | Patvirtinti žalą                     | Žalų vertintojas patvirtina pateiktą žalą                                                       | Būsena tampa `PaidOut`, išmokos atliekamos pagal sutarties taisykles                                         | Sėkmingai atlikta | <img width="1122" height="912" alt="image-11" src="https://github.com/user-attachments/assets/1ad0f416-f094-4fcf-b51d-c7b66f5ddcdd" />
+ |
+|   8 | Atmesti žalą                         | Kitam polisui žalų vertintojas atmeta pateiktą žalą                                             | Būsena tampa `Rejected`, išmoka atliekama pagal sutarties taisykles                                          | Sėkmingai atlikta | <img width="1122" height="917" alt="image-12" src="https://github.com/user-attachments/assets/2f66a3df-e12c-4764-85ac-3769310244e2" />
+ |
+|   9 | Atmesti veiksmą netinkamu adresu     | Klientas arba pašalinis asmuo bando patvirtinti arba atmesti žalą                               | Nėra rodomas šiam veiksmui reikalingas funkcionalumas                                                        | Sėkmingai atlikta | <img width="1783" height="923" alt="image-9" src="https://github.com/user-attachments/assets/595f6da8-4eeb-484c-a437-73c9f35a10ca" />
+  |
+|  10 | Pakartoti jau įvykdytą veiksmą       | Bandoma dar kartą patvirtinti jau išmokėtą žalą                                                 | Antra išmoka neatliekama, būsena lieka `PaidOut`, nėra rodoma pakartotinam veiksmui reikalingo funkcionalumo | Sėkmingai atlikta | <img width="1122" height="912" alt="image-11" src="https://github.com/user-attachments/assets/91ab7164-49ea-41f1-8ccb-15cfbb555bdf" />
+ |
+|  11 | Atšaukti polisą draudiko vardu       | Draudikas bando atšaukti `Created` polisą                                                       | Būsena tampa `Cancelled`, rezervas grąžinamas draudikui                                                      | Sėkmingai atlikta | <img width="1132" height="926" alt="image-13" src="https://github.com/user-attachments/assets/dd32c4cc-80a8-4e95-a203-70e33182c34f" />
+ |
+|  12 | Atšaukti aktyvų polisą kliento vardu | Klientas atšaukia `Active` polisą                                                               | Būsena tampa `Cancelled`, klientui grąžinama sutartyje numatytos įmokos dalis (80%)                          | Sėkmingai atlikta | <img width="1132" height="917" alt="image-14" src="https://github.com/user-attachments/assets/50553d07-6003-4dfd-a1df-d8379553dedb" />
+ |
+|  13 | Atšaukti polisą su pateikta žala     | Bandoma atšaukti polisą kliento vardu po žalos prašymo pateikimo, kurio būsena `ClaimSubmitted` | Veiksmas atmetamas, nėra rodomas šiam veiksmui reikalingas funkcionalumas                                    | Sėkmingai atlikta | <img width="1127" height="928" alt="image-15" src="https://github.com/user-attachments/assets/754461c5-93a9-4be2-91fc-463f03a3eb62" />
+ |
 
 **Pastaba:** klientas gali atšaukti tik `Active` polisą, o draudikas – tik `Created` polisą.
